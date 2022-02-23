@@ -31,7 +31,7 @@ async function main() {
   let s = Date.now();
   await updateFloorDictionary();
   let e = Date.now();
-  console.log(`update all floor took ${e - s}ms`);
+  console.log(`update all floors took ${e - s}ms`);
   setTimeout(main, 3000);
 }
 
