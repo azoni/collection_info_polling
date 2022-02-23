@@ -2,7 +2,6 @@ const Web3 = require('web3');
 const opensea = require('opensea-js');
 const throttledQueue = require('throttled-queue');
 const data = require('./data.json');
-const values = require('./values.json');
 
 console.log('App loaded.');
 
@@ -12,7 +11,6 @@ const provider = new Web3.providers.HttpProvider('https://mainnet.infura.io');
 let floorDict = {};
 let seaport = new OpenSeaPort(provider, {
   networkName: Network.Main,
-  apiKey: values.API_KEY
 });
 
 const ONE_SEC = 2000;
