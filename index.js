@@ -63,7 +63,6 @@ async function specialUpdateSingleFloor(collection, retry = 0) {
       ...(collect['collection']['stats']),
       dev_seller_fee_basis_points: collect['collection']['dev_seller_fee_basis_points']
     };
-    console.log(stats)
     if (fetched_floor > (floorDict[collection]?.floor) * 1.3) {
       console.warn(`potential bug floor with: ${collection}. old floor: ${floorDict[collection]?.floor}, new floor: ${fetched_floor}`);
       return;
