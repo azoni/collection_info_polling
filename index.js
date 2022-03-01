@@ -59,6 +59,11 @@ async function specialUpdateSingleFloor(collection, retry = 0) {
     const collect = await getSeaport().api.get('/api/v1/collection/' + collection);
     clearTimeout(warningTimeout);
     const fetched_floor = collect['collection']['stats']['floor_price'];
+    const stats = {
+      ...(collect['collection']['stats']),
+      dev_seller_fee_basis_points: collect['collection']['dev_seller_fee_basis_points']
+    };
+    console.log(stats)
     if (fetched_floor > (floorDict[collection]?.floor) * 1.3) {
       console.warn(`potential bug floor with: ${collection}. old floor: ${floorDict[collection]?.floor}, new floor: ${fetched_floor}`);
       return;
@@ -66,11 +71,12 @@ async function specialUpdateSingleFloor(collection, retry = 0) {
     floorDict[collection] = {
       floor: fetched_floor,
     };
-    fetch('http://10.0.202/:3000/floor', {
+    fetch('http://10.0.0.202:3000/floor', {
       method: 'POST',
       body: JSON.stringify({
         collection: collection,
-        floor: fetched_floor
+        floor: fetched_floor,
+        stats: stats,
       })
     })
       .catch((ex) => console.log(ex))
