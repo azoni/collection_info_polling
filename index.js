@@ -66,7 +66,7 @@ async function specialUpdateSingleFloor(collection, retry = 0) {
     floorDict[collection] = {
       floor: fetched_floor,
     };
-    fetch('http://10.0.0.172:3000/floor', {
+    fetch('http://10.0.202/:3000/floor', {
       method: 'POST',
       body: JSON.stringify({
         collection: collection,
