@@ -2,6 +2,12 @@ const Web3 = require('web3');
 const opensea = require('opensea-js');
 const throttledQueue = require('throttled-queue');
 const data = require('./data.json');
+const { MongoClient } = require("mongodb");
+// Connection URI
+const uri = "mongodb://10.0.0.80:27017/";
+// Create a new MongoClient
+const client = new MongoClient(uri);
+let WATCH_LIST_FROM_MONGO = [];
 
 console.log('App loaded.');
 
@@ -26,16 +32,34 @@ function getSeaport() {
 }
 
 async function main() {
-  let s = Date.now();
-  await updateFloorDictionary();
-  let e = Date.now();
-  console.log(`update all floors took ${e - s}ms`);
-  setTimeout(main, 3000);
+  await client.connect();
+
+  updateLoop();
 }
 
-async function updateFloorDictionary() {
+async function updateLoop() {
+  let myWatchList = [];
+  try {
+    const doc_cursor = client.db("test").collection("watch_lists").find();
+    myWatchList = (await doc_cursor.toArray()).map(({slug}) => slug);
+  } catch (error) {
+    console.error(error);
+    console.error(`Will default to watchlist in data file`);
+    myWatchList = data.WATCH_LIST;
+  }
+
+  let s = Date.now();
+  await updateFloorDictionary(myWatchList);
+  let e = Date.now();
+  console.log(`update all floors took ${e - s}ms`);
+  setTimeout(updateLoop, 2500);
+}
+
+async function updateFloorDictionary(watch_list) {
+
+  //data.WATCH_LIST
   return Promise.all(
-    data.WATCH_LIST.map((curr_coll_name) =>
+    watch_list.map((curr_coll_name) =>
       floorThrottle(() => specialUpdateSingleFloor(curr_coll_name, 2))
     )
   );
@@ -70,7 +94,7 @@ async function specialUpdateSingleFloor(collection, retry = 0) {
     floorDict[collection] = {
       floor: fetched_floor,
     };
-    fetch('http://10.0.0.202:3000/floor', {
+    fetch('http://10.0.0.59:3000/floor', {
       method: 'POST',
       body: JSON.stringify({
         collection: collection,
