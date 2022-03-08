@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "mongodb": "^4.4.1",
     "opensea-js": "^2.0.1",
     "throttled-queue": "^2.1.2",
     "web3": "^1.7.0"
