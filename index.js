@@ -19,7 +19,7 @@ let seaport = new OpenSeaPort(provider, {
   networkName: Network.Main,
 });
 
-const ONE_SEC = 2000;
+const ONE_SEC = 2_100;
 const floorThrottle = throttledQueue(2, ONE_SEC);
 /**
  * Gets cached seaport or creates the first instance of it and returns it. Creates providerEngine if seaport wasnt cached too.
@@ -52,7 +52,7 @@ async function updateLoop() {
   await updateFloorDictionary(myWatchList);
   let e = Date.now();
   console.log(`update all floors took ${e - s}ms`);
-  setTimeout(updateLoop, 2500);
+  setTimeout(updateLoop, 5000);
 }
 
 async function updateFloorDictionary(watch_list) {
@@ -65,6 +65,7 @@ async function updateFloorDictionary(watch_list) {
   );
 }
 let response_error_count = 0;
+let floor_drop_dict = {};
 async function specialUpdateSingleFloor(collection, retry = 0) {
   response_error_count = Math.max(response_error_count - 1, 0);
   if (response_error_count >= 3) {
@@ -87,10 +88,44 @@ async function specialUpdateSingleFloor(collection, retry = 0) {
       ...(collect['collection']['stats']),
       dev_seller_fee_basis_points: collect['collection']['dev_seller_fee_basis_points']
     };
-    if (fetched_floor > (floorDict[collection]?.floor) * 1.3) {
-      console.warn(`potential bug floor with: ${collection}. old floor: ${floorDict[collection]?.floor}, new floor: ${fetched_floor}`);
-      return;
+    
+    if (collection in floor_drop_dict) {
+      const count = floor_drop_dict[collection]?.count || 0;
+      floor_drop_dict[collection].count = count + 1; 
     }
+    if (fetched_floor > (floorDict[collection]?.floor) * 1.3) {
+      if (
+        collection in floor_drop_dict 
+        && floor_drop_dict[collection]?.count > 4
+        && fetched_floor < floor_drop_dict[collection]?.floor * 1.3
+      ) {
+        delete floor_drop_dict[collection];
+      } else {
+        
+        console.warn(`potential bug floor with: ${collection}. old floor: ${floorDict[collection]?.floor}, new floor: ${fetched_floor}`);
+        return;
+      }
+      
+    } else if (fetched_floor < (floorDict[collection]?.floor) * 0.7) {
+      if (collection in floor_drop_dict) {
+        console.warn('previous floor drop detected, may be free falling');
+        const count = floor_drop_dict[collection]?.count || 0;
+        const old_steady_floor = floor_drop_dict[collection]?.floor || floorDict[collection].floor;
+
+        floor_drop_dict[collection] = {
+          floor: old_steady_floor,
+          count: count,
+        };
+      } else {
+        floor_drop_dict[collection] = {
+          floor: floorDict[collection].floor,
+          count: 0,
+        };
+      }
+    }
+
+
+
     floorDict[collection] = {
       floor: fetched_floor,
     };
